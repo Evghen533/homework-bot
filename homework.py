@@ -87,7 +87,8 @@ def get_api_answer(current_timestamp):
 
     if response.status_code != HTTPStatus.OK:
         logging.error(
-            f'Недоступность эндпоинта {ENDPOINT}. Код ответа API: {response.status_code}'
+            f'Недоступность эндпоинта {ENDPOINT}. '
+            f'Код ответа API: {response.status_code}'
         )
         raise exceptions.RequestError(
             f'API вернул код {response.status_code}'
@@ -163,9 +164,7 @@ def send_message(bot, message):
 
 
 def main():
-    """
-    Основная логика работы бота.
-    """
+    """Основная логика работы бота."""
     configure_logging()
 
     if not check_tokens():
@@ -187,7 +186,9 @@ def main():
 
             if not homeworks:
                 logging.debug('В ответе API нет новых статусов.')
-                current_timestamp = response.get('current_date', int(time.time()))
+                current_timestamp = response.get(
+                    'current_date', int(time.time())
+                )
                 time.sleep(RETRY_TIME)
                 continue
 
@@ -211,7 +212,8 @@ def main():
                     send_message(bot, f'⚠️ Ошибка структуры ответа API: {e}')
                 except exceptions.SendMessageFailure as send_err:
                     logging.error(
-                        f'Не удалось отправить уведомление об ошибке: {send_err}'
+                        f'Не удалось отправить '
+                        f'уведомление об ошибке: {send_err} '
                     )
                 last_error_message = str(e)
             time.sleep(RETRY_TIME)
@@ -224,7 +226,8 @@ def main():
                     send_message(bot, f'⚠️ Ошибка при обработке статуса: {e}')
                 except exceptions.SendMessageFailure as send_err:
                     logging.error(
-                        f'Не удалось отправить уведомление об ошибке: {send_err}'
+                        f'Не удалось отправить '
+                        f'уведомление об ошибке: {send_err} '
                     )
                 last_error_message = str(e)
             time.sleep(RETRY_TIME)
