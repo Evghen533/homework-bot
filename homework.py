@@ -58,7 +58,10 @@ def check_tokens():
     ]
 
     if missing_tokens:
-        msg = f'Отсутствует обязательная переменная окружения: {", ".join(missing_tokens)}'
+        msg = (
+            f'Отсутствует обязательная переменная окружения: '
+            f'{", ".join(missing_tokens)}'
+        )
         logging.critical(msg)
         return False
 
@@ -75,7 +78,9 @@ def get_api_answer(current_timestamp):
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
     try:
-        response = requests.get(ENDPOINT, headers=headers, params=params, timeout=10)
+        response = requests.get(
+            ENDPOINT, headers=headers, params=params, timeout=10
+        )
     except requests.RequestException as e:
         logging.error(f'Сбой при запросе к эндпоинту {ENDPOINT}: {e}')
         raise exceptions.RequestError(f'Ошибка запроса к API: {e}') from e
@@ -92,7 +97,9 @@ def get_api_answer(current_timestamp):
         return response.json()
     except ValueError as e:
         logging.error(f'Ошибка парсинга JSON из ответа API: {e}')
-        raise exceptions.RequestError('Не удалось распарсить JSON ответа API') from e
+        raise exceptions.RequestError(
+            'Не удалось распарсить JSON ответа API'
+        ) from e
 
 
 def check_response(response):
@@ -126,11 +133,15 @@ def parse_status(homework):
         homework_status = homework['status']
     except KeyError as e:
         logging.error(f'В данных о домашней работе отсутствует ключ: {e}')
-        raise exceptions.ResponseStructureError(f'Отсутствует ключ в данных работы: {e}') from e
+        raise exceptions.ResponseStructureError(
+            f'Отсутствует ключ в данных работы: {e}'
+        ) from e
 
     if homework_status not in HOMEWORK_VERDICTS:
         logging.error(f'Неожиданный статус домашней работы: {homework_status}')
-        raise exceptions.UnexpectedStatusError(f'Неизвестный статус работы: {homework_status}')
+        raise exceptions.UnexpectedStatusError(
+            f'Неизвестный статус работы: {homework_status}'
+        )
 
     verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
@@ -146,7 +157,9 @@ def send_message(bot, message):
         logging.debug(f'Бот отправил сообщение: "{message}"')
     except Exception as e:
         logging.error(f'Сбой при отправке сообщения в Telegram: {e}')
-        raise exceptions.SendMessageFailure(f'Не удалось отправить сообщение: {e}') from e
+        raise exceptions.SendMessageFailure(
+            f'Не удалось отправить сообщение: {e}'
+        ) from e
 
 
 def main():
@@ -156,7 +169,9 @@ def main():
     configure_logging()
 
     if not check_tokens():
-        logging.critical('Программа принудительно остановлена из-за отсутствия токенов.')
+        logging.critical(
+            'Программа принудительно остановлена из-за отсутствия токенов.'
+        )
         raise SystemExit('Программа принудительно остановлена')
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
@@ -172,13 +187,11 @@ def main():
 
             if not homeworks:
                 logging.debug('В ответе API нет новых статусов.')
-                # Обновляем timestamp даже если работ нет, чтобы не запрашивать прошлое
                 current_timestamp = response.get('current_date', int(time.time()))
                 time.sleep(RETRY_TIME)
                 continue
 
             # Обрабатываем первую найденную работу (или можно пройтись циклом)
-            # В задании обычно подразумевается проверка изменений, берем первую актуальную
             message = parse_status(homeworks)
             send_message(bot, message)
 
@@ -188,7 +201,6 @@ def main():
         except exceptions.RequestError as e:
             # Ошибки API (сеть, 4xx, 5xx, JSON)
             logging.error(f'Ошибка при запросе к API Практикума: {e}')
-            # Не спамим в Telegram об ошибках API, чтобы не создавать новые проблемы
             time.sleep(RETRY_TIME)
 
         except exceptions.ResponseStructureError as e:
@@ -198,7 +210,9 @@ def main():
                 try:
                     send_message(bot, f'⚠️ Ошибка структуры ответа API: {e}')
                 except exceptions.SendMessageFailure as send_err:
-                    logging.error(f'Не удалось отправить уведомление об ошибке: {send_err}')
+                    logging.error(
+                        f'Не удалось отправить уведомление об ошибке: {send_err}'
+                    )
                 last_error_message = str(e)
             time.sleep(RETRY_TIME)
 
@@ -209,7 +223,9 @@ def main():
                 try:
                     send_message(bot, f'⚠️ Ошибка при обработке статуса: {e}')
                 except exceptions.SendMessageFailure as send_err:
-                    logging.error(f'Не удалось отправить уведомление об ошибке: {send_err}')
+                    logging.error(
+                        f'Не удалось отправить уведомление об ошибке: {send_err}'
+                    )
                 last_error_message = str(e)
             time.sleep(RETRY_TIME)
 
@@ -232,4 +248,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-.
