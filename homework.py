@@ -56,7 +56,7 @@ def configure_logging():
 
 
 def check_tokens():
-    """Проверяет наличие и корректность всех необходимых токенов и идентификаторов."""
+    """Проверяет наличие и корректность токенов и идентификаторов."""
     required = [
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
@@ -198,7 +198,8 @@ def main():
                 except Exception as send_err:
                     # ВАЖНО: здесь тоже нужен logging.error
                     logging.error(
-                        f'Не удалось отправить сообщение об ошибке в Telegram: {send_err}'
+                        f'Не удалось отправить сообщение об ошибке в Telegram: '
+                        f'{send_err}'
                     )
 
         time.sleep(RETRY_PERIOD)
