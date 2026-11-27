@@ -183,7 +183,9 @@ def main():
 
             if not homeworks:
                 logging.debug('В ответе API нет новых статусов.')
-                current_timestamp = response.get('current_date', int(time.time()))
+                current_timestamp = response.get(
+                    'current_date', int(time.time())
+                )
                 continue
 
             # ВАЖНО: берём первую работу из списка
@@ -203,7 +205,8 @@ def main():
                     last_error_message = str(e)
                 except Exception as send_err:
                     logging.error(
-                        f'Не удалось отправить сообщение об ошибке в Telegram: {send_err}'
+                        f'Не удалось отправить сообщение '
+                        f'об ошибке в Telegram: {send_err}'
                     )
 
         # Выполняется всегда, даже если выше всё сломалось
