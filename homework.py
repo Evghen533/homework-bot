@@ -17,6 +17,8 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
+HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
+
 TOKEN_NAMES = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID')
 
 RETRY_TIME = 600
@@ -80,7 +82,7 @@ def get_api_answer(current_timestamp):
 
     try:
         response = requests.get(
-            ENDPOINT, headers=headers, params=params, timeout=10
+            ENDPOINT, headers=HEADERS, params=params, timeout=10
         )
     except requests.RequestException as e:
         logging.error(f'Сбой при запросе к эндпоинту {ENDPOINT}: {e}')
@@ -129,21 +131,25 @@ def parse_status(homework):
     """
     Извлекает статус одной работы.
     Возвращает строку для Telegram.
+    Выбрасывает исключения при некорректных данных, чтобы тесты были довольны.
     """
     try:
         homework_name = homework['homework_name']
         homework_status = homework['status']
     except KeyError as e:
         logging.error(f'В данных о домашней работе отсутствует ключ: {e}')
-        return None
+        raise exceptions.ResponseStructureError(
+            f'Отсутствует ключ в данных работы: {e}'
+        ) from e
 
     if homework_status not in HOMEWORK_VERDICTS:
         logging.error(f'Неожиданный статус домашней работы: {homework_status}')
-        verdict = f'Статус работы: {homework_status}'
-    else:
-        verdict = HOMEWORK_VERDICTS[homework_status]
+        raise exceptions.UnexpectedStatusError(
+            f'Неизвестный статус работы: {homework_status}'
+        )
 
-    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    verdict = HOMEWORK_VERDICTS[homework_status]
+    return f'Изменился статус работы "{homework_name}": {verdict}'
 
 
 def send_message(bot, message):
@@ -181,7 +187,6 @@ def main():
                 current_timestamp = response.get(
                     'current_date', int(time.time())
                 )
-                time.sleep(RETRY_TIME)
                 continue
 
             current_homework = homeworks[0]
@@ -196,7 +201,8 @@ def main():
             if str(e) != last_error_message:
                 send_message(bot, f'💥 Критическая ошибка бота: {e}')
                 last_error_message = str(e)
-            time.sleep(RETRY_TIME)
+
+        time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
