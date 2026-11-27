@@ -188,7 +188,7 @@ def main():
                 )
                 continue
 
-            current_homework = homeworks[0]
+            current_homework = homeworks
             message = parse_status(current_homework)
             if message:
                 send_message(bot, message)
@@ -197,9 +197,16 @@ def main():
 
         except Exception as e:
             logging.critical(f'Критическая ошибка в работе программы: {e}')
+
             if str(e) != last_error_message:
-                send_message(bot, f'💥 Критическая ошибка бота: {e}')
-                last_error_message = str(e)
+                try:
+                    send_message(bot, f'💥 Критическая ошибка бота: {e}')
+                    last_error_message = str(e)
+                except Exception as send_err:
+                    logging.error(
+                        f'Не удалось отправить сообщение '
+                        f'об ошибке в Telegram: {send_err}'
+                    )
 
         time.sleep(RETRY_TIME)
 
