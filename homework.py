@@ -205,14 +205,11 @@ def main():
                     last_error_message = str(e)
                 except Exception as send_err:
                     logging.error(
-                        f'Не удалось отправить сообщение '
-                        f'об ошибке в Telegram: {send_err}'
+                        f'Не удалось отправить сообщение об ошибке в Telegram: {send_err}'
                     )
 
         # Выполняется всегда, даже если выше всё сломалось
         time.sleep(RETRY_TIME)
-
-
 
 if __name__ == '__main__':
     main()
