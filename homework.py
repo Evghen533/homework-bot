@@ -19,27 +19,23 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
-TOKEN_NAMES = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID')
-
 RETRY_TIME = 600
-RETRY_PERIOD = RETRY_TIME
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+
 HOMEWORK_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
-    'rejected': 'Работа проверена: у ревьюера есть замечания.'
+    'rejected': 'Работа проверена: у ревьюера есть замечания.',
 }
-
 
 HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
-    'rejected': 'Работа проверена: у ревьюера есть замечания.'
+    'rejected': 'Работа проверена: у ревьюера есть замечания.',
 }
 
 
 def configure_logging():
-    """Настройка логирования согласно требованиям задания."""
     logging.basicConfig(
         level=logging.DEBUG,
         format='%(asctime)s [%(levelname)s] %(message)s',
@@ -57,14 +53,6 @@ def configure_logging():
 
 
 def check_tokens():
-    """Проверяет наличие и корректность всех необходимых токенов.
-    и идентификаторов.
-
-    Возвращает True, если все переменные (PRACTICUM_TOKEN,
-    TELEGRAM_TOKEN, TELEGRAM_CHAT_ID) заданы и не пусты.
-    Для строк проверяется отсутствие пробелов, для чисел
-    (например, CHAT_ID) достаточно наличия значения.
-    """
     required = [
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
@@ -82,10 +70,6 @@ def check_tokens():
 
 
 def get_api_answer(current_timestamp):
-    """
-    Делает запрос к API Практикума.
-    Возвращает распарсенный JSON (dict).
-    """
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
 
@@ -116,10 +100,6 @@ def get_api_answer(current_timestamp):
 
 
 def check_response(response):
-    """
-    Проверяет структуру ответа API.
-    Возвращает список работ (homeworks).
-    """
     if not isinstance(response, dict):
         logging.error('Ответ API не соответствует ожидаемому типу <dict>')
         raise TypeError('Ответ API не соответствует ожидаемому типу <dict>')
@@ -137,20 +117,6 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Возвращает сообщение об изменении статуса проверки работы.
-
-    Аргументы:
-        homework (dict): словарь с данными о работе, содержащий ключи
-                         'homework_name' и 'status'.
-
-    Возвращает:
-        str: сообщение вида 'Изменился статус проверки работы "Название": ...'.
-
-    Вызывает:
-        KeyError: если в словаре отсутствует ключ 'homework_name'.
-        ValueError: если переданный статус отсутствует в словаре
-                    HOMEWORK_STATUSES.
-    """
     if 'homework_name' not in homework:
         raise KeyError('В ответе API отсутствует ключ "homework_name"')
 
@@ -168,7 +134,6 @@ def parse_status(homework):
 
 
 def send_message(bot, message):
-    """Отправляет сообщение в Telegram."""
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logging.debug('Сообщение успешно отправлено в Telegram.')
@@ -177,7 +142,6 @@ def send_message(bot, message):
 
 
 def main():
-    """Основная функция запуска бота."""
     configure_logging()
 
     if not check_tokens():
@@ -204,10 +168,8 @@ def main():
                 )
                 continue
 
-            # ВАЖНО: берём первую работу из списка
             current_homework = homeworks[0]
             message = parse_status(current_homework)
-
             send_message(bot, message)
 
             current_timestamp = response.get('current_date', int(time.time()))
@@ -220,9 +182,9 @@ def main():
                     send_message(bot, f'💥 Критическая ошибка бота: {e}')
                     last_error_message = str(e)
                 except Exception as send_err:
+                    # Здесь тоже нужен уровень ERROR
                     logging.error(
-                        f'Не удалось отправить сообщение об ошибке '
-                        f'в Telegram: {send_err}'
+                        f'Не удалось отправить сообщение об ошибке в Telegram: {send_err}'
                     )
 
         time.sleep(RETRY_TIME)
