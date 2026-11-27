@@ -198,8 +198,8 @@ def main():
                 except Exception as send_err:
                     # ВАЖНО: здесь тоже нужен logging.error
                     logging.error(
-                        f'Не удалось отправить сообщение об ошибке в Telegram: '
-                        f'{send_err}'
+                        'Не удалось отправить сообщение об ошибке в '
+                        f'Telegram: {send_err}'
                     )
 
         time.sleep(RETRY_PERIOD)
