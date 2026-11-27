@@ -20,6 +20,7 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 TOKEN_NAMES = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID')
 
 RETRY_TIME = 600
+RETRY_PERIOD = RETRY_TIME
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -134,39 +135,28 @@ def parse_status(homework):
         homework_status = homework['status']
     except KeyError as e:
         logging.error(f'В данных о домашней работе отсутствует ключ: {e}')
-        raise exceptions.ResponseStructureError(
-            f'Отсутствует ключ в данных работы: {e}'
-        ) from e
+        return None
 
     if homework_status not in HOMEWORK_VERDICTS:
         logging.error(f'Неожиданный статус домашней работы: {homework_status}')
-        raise exceptions.UnexpectedStatusError(
-            f'Неизвестный статус работы: {homework_status}'
-        )
+        verdict = f'Статус работы: {homework_status}'
+    else:
+        verdict = HOMEWORK_VERDICTS[homework_status]
 
-    verdict = HOMEWORK_VERDICTS[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def send_message(bot, message):
-    """Отправляет сообщение в Telegram.
-
-    Args:
-        bot: экземпляр бота telegram.Bot.
-        message: текст сообщения для отправки.
-    """
+    """Отправляет сообщение в Telegram."""
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        logging.debug('Сообщение успешно отправлено в Telegram.')
     except Exception as e:
         logging.error(f'Сбой при отправке сообщения в Telegram: {e}')
 
 
 def main():
-    """Основная функция запуска бота.
-
-    Выполняет проверку токенов, инициализацию бота и запускает бесконечный цикл
-    опроса API с обработкой ошибок.
-    """
+    """Основная функция запуска бота."""
     configure_logging()
 
     if not check_tokens():
@@ -194,8 +184,10 @@ def main():
                 time.sleep(RETRY_TIME)
                 continue
 
-            message = parse_status(homeworks)
-            send_message(bot, message)
+            current_homework = homeworks[0]
+            message = parse_status(current_homework)
+            if message:
+                send_message(bot, message)
 
             current_timestamp = response.get('current_date', int(time.time()))
 
