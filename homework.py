@@ -24,7 +24,7 @@ TOKEN_NAMES = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID')
 RETRY_TIME = 600
 RETRY_PERIOD = RETRY_TIME
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-HOMEWORK_VERDICTS = {
+HOMEWORK_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
@@ -50,25 +50,13 @@ def configure_logging():
 
 
 def check_tokens():
-    """
-    Проверяет наличие всех обязательных переменных окружения.
-    Возвращает True, если все токены присутствуют.
-    Логирует CRITICAL, если чего-то не хватает.
-    """
-    missing_tokens = [
-        token for token in TOKEN_NAMES
-        if not os.getenv(token)
+    """Проверяет, что все обязательные переменные окружения заданы и не пустые."""
+    required = [
+        PRACTICUM_TOKEN,
+        TELEGRAM_TOKEN,
+        TELEGRAM_CHAT_ID,
     ]
-
-    if missing_tokens:
-        msg = (
-            f'Отсутствует обязательная переменная окружения: '
-            f'{", ".join(missing_tokens)}'
-        )
-        logging.critical(msg)
-        return False
-
-    return True
+    return all(required)
 
 
 def get_api_answer(current_timestamp):
@@ -127,28 +115,14 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """
-    Извлекает статус одной работы.
-    Возвращает строку для Telegram.
-    Выбрасывает исключения при некорректных данных, чтобы тесты были довольны.
-    """
-    try:
-        homework_name = homework['homework_name']
-        homework_status = homework['status']
-    except KeyError as e:
-        logging.error(f'В данных о домашней работе отсутствует ключ: {e}')
-        raise exceptions.ResponseStructureError(
-            f'Отсутствует ключ в данных работы: {e}'
-        ) from e
+    homework_name = homework['homework_name']
+    status = homework['status']
 
-    if homework_status not in HOMEWORK_VERDICTS:
-        logging.error(f'Неожиданный статус домашней работы: {homework_status}')
-        raise exceptions.UnexpectedStatusError(
-            f'Неизвестный статус работы: {homework_status}'
-        )
+    if status not in HOMEWORK_STATUSES:
+        raise ValueError(f'Неизвестный статус: {status}')
 
-    verdict = HOMEWORK_VERDICTS[homework_status]
-    return f'Изменился статус работы "{homework_name}": {verdict}'
+    message_tail = HOMEWORK_STATUSES[status]
+    return f'Изменился статус проверки работы "{homework_name}": {message_tail}'
 
 
 def send_message(bot, message):
