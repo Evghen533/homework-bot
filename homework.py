@@ -149,24 +149,14 @@ def parse_status(homework):
 
 
 def send_message(bot, message):
-    """
-    Отправляет сообщение в Telegram.
-    Логирует DEBUG при успехе, ERROR при неудаче.
-    """
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-        logging.debug(f'Бот отправил сообщение: "{message}"')
     except Exception as e:
         logging.error(f'Сбой при отправке сообщения в Telegram: {e}')
-        raise exceptions.SendMessageFailure(
-            f'Не удалось отправить сообщение: {e}'
-        ) from e
 
 
 def main():
-    """Основная логика работы бота."""
     configure_logging()
-
     if not check_tokens():
         logging.critical(
             'Программа принудительно остановлена из-за отсутствия токенов.'
@@ -176,14 +166,12 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     last_error_message = None
-
     logging.info('Бот запущен. Начинаю опрос API каждые 10 минут.')
 
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
-
             if not homeworks:
                 logging.debug('В ответе API нет новых статусов.')
                 current_timestamp = response.get(
@@ -192,59 +180,14 @@ def main():
                 time.sleep(RETRY_TIME)
                 continue
 
-            # Обрабатываем первую найденную работу (или можно пройтись циклом)
             message = parse_status(homeworks)
             send_message(bot, message)
-
-            # Обновляем timestamp на текущую дату из ответа API
             current_timestamp = response.get('current_date', int(time.time()))
 
-        except exceptions.RequestError as e:
-            # Ошибки API (сеть, 4xx, 5xx, JSON)
-            logging.error(f'Ошибка при запросе к API Практикума: {e}')
-            time.sleep(RETRY_TIME)
-
-        except exceptions.ResponseStructureError as e:
-            # Ошибки структуры данных (нет ключей, неверный тип)
-            logging.error(f'Ошибка структуры ответа API: {e}')
-            if str(e) != last_error_message:
-                try:
-                    send_message(bot, f'⚠️ Ошибка структуры ответа API: {e}')
-                except exceptions.SendMessageFailure as send_err:
-                    logging.error(
-                        f'Не удалось отправить '
-                        f'уведомление об ошибке: {send_err} '
-                    )
-                last_error_message = str(e)
-            time.sleep(RETRY_TIME)
-
-        except exceptions.UnexpectedStatusError as e:
-            # Неожиданный статус работы
-            logging.error(f'Неожиданный статус работы: {e}')
-            if str(e) != last_error_message:
-                try:
-                    send_message(bot, f'⚠️ Ошибка при обработке статуса: {e}')
-                except exceptions.SendMessageFailure as send_err:
-                    logging.error(
-                        f'Не удалось отправить '
-                        f'уведомление об ошибке: {send_err} '
-                    )
-                last_error_message = str(e)
-            time.sleep(RETRY_TIME)
-
-        except exceptions.SendMessageFailure as e:
-            # Ошибка отправки в Telegram
-            logging.error(f'Не удалось отправить сообщение в Telegram: {e}')
-            time.sleep(RETRY_TIME)
-
         except Exception as e:
-            # Ловим любые другие непредвиденные ошибки
             logging.critical(f'Критическая ошибка в работе программы: {e}')
             if str(e) != last_error_message:
-                try:
-                    send_message(bot, f'💥 Критическая ошибка бота: {e}')
-                except exceptions.SendMessageFailure:
-                    pass
+                send_message(bot, f'💥 Критическая ошибка бота: {e}')
                 last_error_message = str(e)
             time.sleep(RETRY_TIME)
 
