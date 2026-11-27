@@ -50,17 +50,20 @@ def configure_logging():
 
 
 def check_tokens():
-    """Проверяет, что все обязательные переменные окружения заданы и не пустые.
-
-    Возвращает:
-        bool: True, если все токены заданы и не пустые, иначе False.
-    """
     required = [
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
         TELEGRAM_CHAT_ID,
     ]
-    return all(token and token.strip() for token in required)
+    def is_valid(token):
+        if token is None:
+            return False
+        if isinstance(token, str):
+            return bool(token.strip())
+        return True
+
+    return all(is_valid(token) for token in required)
+
 
 
 def get_api_answer(current_timestamp):

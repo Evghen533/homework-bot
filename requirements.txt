@@ -1,5 +1,4 @@
 requests
-pyTelegramBotAPI
 python-dotenv
 pytest
 pytest-timeout
@@ -7,3 +6,4 @@ pytest-env
 pytest-faker
 flake8
 flake8-docstrings
+python-telegram-bot==20.7
