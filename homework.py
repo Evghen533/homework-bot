@@ -149,6 +149,12 @@ def parse_status(homework):
 
 
 def send_message(bot, message):
+    """Отправляет сообщение в Telegram.
+
+    Args:
+        bot: экземпляр бота telegram.Bot.
+        message: текст сообщения для отправки.
+    """
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except Exception as e:
@@ -156,7 +162,13 @@ def send_message(bot, message):
 
 
 def main():
+    """Основная функция запуска бота.
+
+    Выполняет проверку токенов, инициализацию бота и запускает бесконечный цикл
+    опроса API с обработкой ошибок.
+    """
     configure_logging()
+
     if not check_tokens():
         logging.critical(
             'Программа принудительно остановлена из-за отсутствия токенов.'
@@ -166,12 +178,14 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     last_error_message = None
+
     logging.info('Бот запущен. Начинаю опрос API каждые 10 минут.')
 
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
+
             if not homeworks:
                 logging.debug('В ответе API нет новых статусов.')
                 current_timestamp = response.get(
@@ -182,6 +196,7 @@ def main():
 
             message = parse_status(homeworks)
             send_message(bot, message)
+
             current_timestamp = response.get('current_date', int(time.time()))
 
         except Exception as e:
