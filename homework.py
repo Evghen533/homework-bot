@@ -50,7 +50,8 @@ def configure_logging():
 
 
 def check_tokens():
-    """Проверяет, что все обязательные переменные окружения заданы и не пустые."""
+    """Проверяет, что все обязательные переменные окружения заданы
+    и не пустые."""
     required = [
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
@@ -115,6 +116,18 @@ def check_response(response):
 
 
 def parse_status(homework):
+    """Возвращает сообщение об изменении статуса проверки работы.
+
+    Аргументы:
+        homework (dict): словарь с данными о работе, содержащий ключи
+                         'homework_name' и 'status'.
+
+    Возвращает:
+        str: сообщение вида 'Изменился статус проверки работы "Название": ...'.
+
+    Вызывает:
+        ValueError: если переданный статус отсутствует в словаре HOMEWORK_STATUSES.
+    """
     homework_name = homework['homework_name']
     status = homework['status']
 
@@ -122,7 +135,10 @@ def parse_status(homework):
         raise ValueError(f'Неизвестный статус: {status}')
 
     message_tail = HOMEWORK_STATUSES[status]
-    return f'Изменился статус проверки работы "{homework_name}": {message_tail}'
+    return (
+        f'Изменился статус проверки работы "{homework_name}": '
+        f'{message_tail}'
+    )
 
 
 def send_message(bot, message):
