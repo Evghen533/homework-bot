@@ -36,6 +36,7 @@ HOMEWORK_VERDICTS = {
 
 
 def configure_logging():
+    """Настройка логирования согласно требованиям задания."""
     logging.basicConfig(
         level=logging.DEBUG,
         format='%(asctime)s [%(levelname)s] %(message)s',
@@ -53,6 +54,7 @@ def configure_logging():
 
 
 def check_tokens():
+    """Проверяет наличие и корректность всех необходимых токенов и идентификаторов."""
     required = [
         PRACTICUM_TOKEN,
         TELEGRAM_TOKEN,
@@ -70,6 +72,7 @@ def check_tokens():
 
 
 def get_api_answer(current_timestamp):
+    """Делает запрос к API Практикума и возвращает распарсенный JSON (dict)."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
 
@@ -100,6 +103,7 @@ def get_api_answer(current_timestamp):
 
 
 def check_response(response):
+    """Проверяет структуру ответа API и возвращает список работ (homeworks)."""
     if not isinstance(response, dict):
         logging.error('Ответ API не соответствует ожидаемому типу <dict>')
         raise TypeError('Ответ API не соответствует ожидаемому типу <dict>')
@@ -117,6 +121,7 @@ def check_response(response):
 
 
 def parse_status(homework):
+    """Возвращает сообщение об изменении статуса проверки работы."""
     if 'homework_name' not in homework:
         raise KeyError('В ответе API отсутствует ключ "homework_name"')
 
@@ -134,6 +139,7 @@ def parse_status(homework):
 
 
 def send_message(bot, message):
+    """Отправляет сообщение в Telegram."""
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logging.debug('Сообщение успешно отправлено в Telegram.')
@@ -142,6 +148,7 @@ def send_message(bot, message):
 
 
 def main():
+    """Основная функция запуска бота."""
     configure_logging()
 
     if not check_tokens():
@@ -168,7 +175,7 @@ def main():
                 )
                 continue
 
-            current_homework = homeworks[0]
+            current_homework = homeworks
             message = parse_status(current_homework)
             send_message(bot, message)
 
@@ -182,9 +189,9 @@ def main():
                     send_message(bot, f'💥 Критическая ошибка бота: {e}')
                     last_error_message = str(e)
                 except Exception as send_err:
-                    # Здесь тоже нужен уровень ERROR
                     logging.error(
-                        f'Не удалось отправить сообщение об ошибке в Telegram: {send_err}'
+                        f'Не удалось отправить сообщение об ошибке '
+                        f'в Telegram: {send_err}'
                     )
 
         time.sleep(RETRY_TIME)
