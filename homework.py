@@ -31,6 +31,12 @@ HOMEWORK_STATUSES = {
 }
 
 
+HOMEWORK_VERDICTS = {
+    'approved': 'Работа проверена: у вас всё получилось!',
+    'rejected': 'К сожалению, в работе нашлись ошибки.',
+}
+
+
 def configure_logging():
     """Настройка логирования согласно требованиям задания."""
     logging.basicConfig(
@@ -140,9 +146,13 @@ def parse_status(homework):
         str: сообщение вида 'Изменился статус проверки работы "Название": ...'.
 
     Вызывает:
+        KeyError: если в словаре отсутствует ключ 'homework_name'.
         ValueError: если переданный статус отсутствует в словаре
                     HOMEWORK_STATUSES.
     """
+    if 'homework_name' not in homework:
+        raise KeyError('В ответе API отсутствует ключ "homework_name"')
+
     homework_name = homework['homework_name']
     status = homework['status']
 
@@ -187,7 +197,7 @@ def main():
             homeworks = check_response(response)
 
             if not homeworks:
-                logging.debug('В ответе API нет новых статусов.')
+                logging.info('В ответе API нет новых статусов.')
                 current_timestamp = response.get(
                     'current_date', int(time.time())
                 )
